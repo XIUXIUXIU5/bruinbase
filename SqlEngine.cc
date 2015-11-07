@@ -132,8 +132,32 @@ RC SqlEngine::select(int attr, const string& table, const vector<SelCond>& cond)
 
 RC SqlEngine::load(const string& table, const string& loadfile, bool index)
 {
-  /* your code here */
+  RecordFile rf;   // RecordFile containing the table
+  RecordId   rid;  // record cursor for table scanning
+  RC     rc;
 
+  fstream fin;
+  fin.open(loadfile.c_str(),fstream::in);
+
+  if(rc = rf.open(table + ".tbl", 'w') < 0)
+  {
+    fprintf(stderr, "Error: table %s can't be created\n", table.c_str());
+    return rc;
+  }
+  string line;
+  while(getline(fin, line)) 
+  {
+      rid = rf.endRid();
+      int key;
+      string value;
+      parseLoadLine(line,key,value);
+      if(rc = rf.append(key,value,rid) < 0) {
+        fprintf(stderr, "Error: fail to add record %s\n", line.c_str());
+        return rc;
+      }
+  }
+  fin.close();
+  rf.close();
   return 0;
 }
 
