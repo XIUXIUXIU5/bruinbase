@@ -1,4 +1,7 @@
 #include "BTreeNode.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 using namespace std;
 
 //helper:
@@ -18,8 +21,9 @@ PageId* BTLeafNode::siblingId()
  */
 RC BTLeafNode::read(PageId pid, const PageFile& pf)
 { 
-	if(rt = pf.read(pid,buffer) < 0)	
-		return rt;
+	RC rc;
+	if(rc = pf.read(pid,buffer) < 0)	
+		return rc;
 	return 0; 
 }
     
@@ -44,7 +48,7 @@ RC BTLeafNode::write(PageId pid, PageFile& pf)
 int BTLeafNode::getKeyCount()
 { 
 	int count = 0;
-	leafIndex* p = buffer;
+	leafCursor* p = (leafCursor *)buffer;
 	while(p != 0 && count < MAX_LEAF_ENTRY_NUM){
 		p++;
 		count++;
@@ -64,13 +68,13 @@ RC BTLeafNode::insert(int key, const RecordId& rid)
 		return RC_NODE_FULL;
 	int eid;
 	locate(key,eid);
-	leafIndex * p = buffer;
+	leafCursor *p = (leafCursor *)buffer;
 	p += eid+1;
-	int size = sizeof(leafIndex) * (getKeyCount() - eid+1);
+	size_t size = sizeof(leafCursor) * (getKeyCount() - eid+1);
 	char *temp = (char *)malloc(size);
 	memcpy(temp,p,size);
-	*p->rid = rid;
-	*p->key = key;
+	p->rid = rid;
+	p->key = key;
 	p++;
 	memcpy(p,temp, size);
 	free(temp);
@@ -95,10 +99,10 @@ RC BTLeafNode::insertAndSplit(int key, const RecordId& rid,
 	locate(key, eid);
 	if(eid + 1 >= (MAX_LEAF_ENTRY_NUM + 1)/2)
 	{
-		leafIndex *p = buffer;
+		leafCursor *p = (leafCursor *)buffer;
 		p += (MAX_LEAF_ENTRY_NUM + 1)/2;
-		int size = sizeof(leafIndex) * (MAX_LEAF_ENTRY_NUM/2);
-		leafIndex *temp = p;
+		size_t size = sizeof(leafCursor) * (MAX_LEAF_ENTRY_NUM/2);
+		leafCursor *temp = p;
 		for(int i = 0; i < MAX_LEAF_ENTRY_NUM/2; i++)
 		{
 			if(rc = sibling.insert(p->key,p->rid) < 0)	
@@ -110,15 +114,15 @@ RC BTLeafNode::insertAndSplit(int key, const RecordId& rid,
 		sibling.insert(key,rid);
 		memset(temp,0,size);
 		setNextNodePtr(-1);
-		int rid;
+		RecordId rid;
 		sibling.readEntry(0,siblingKey,rid);
 	}
 	else{
-		leafIndex *p = buffer;
+		leafCursor *p = (leafCursor *)buffer;
 		p += MAX_LEAF_ENTRY_NUM/2;
 		siblingKey = p->key;
-		int size = sizeof(leafIndex) * (MAX_LEAF_ENTRY_NUM/2 +1);
-		leafIndex *temp = p;
+		size_t size = sizeof(leafCursor) * (MAX_LEAF_ENTRY_NUM/2 +1);
+		leafCursor *temp = p;
 		for(int i = 0; i < MAX_LEAF_ENTRY_NUM/2 + 1; i++)
 		{
 			if(rc = sibling.insert(p->key,p->rid) < 0)
@@ -147,7 +151,7 @@ RC BTLeafNode::insertAndSplit(int key, const RecordId& rid,
 RC BTLeafNode::locate(int searchKey, int& eid)
 { 
 	eid = -1;
-	leafIndex *p = buffer;
+	leafCursor *p = (leafCursor *)buffer;
 	while(p->key <= searchKey)
 	{
 		eid++;
@@ -167,7 +171,7 @@ RC BTLeafNode::locate(int searchKey, int& eid)
  */
 RC BTLeafNode::readEntry(int eid, int& key, RecordId& rid)
 { 
-	leafIndex *p = buffer;
+	leafCursor *p = (leafCursor *)buffer;
 	if(eid < 0)
 		return RC_INVALID_CURSOR;
 	p += eid;
