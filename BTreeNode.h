@@ -13,6 +13,15 @@
 #include "RecordFile.h"
 #include "PageFile.h"
 
+const int MAX_LEAF_ENTRY_NUM = 85;
+
+typedef struct {
+  // PageId of the index entry
+  RecordId  rid;  
+  // The entry number inside the node
+  int     key;  
+} leafCursor;
+
 /**
  * BTLeafNode: The class representing a B+tree leaf node.
  */
