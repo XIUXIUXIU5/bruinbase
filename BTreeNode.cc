@@ -13,6 +13,12 @@ PageId* BTLeafNode::siblingId()
 	return (PageId *)p;
 }
 
+BTLeafNode::BTLeafNode()
+{
+	num = 0;
+	memset(buffer,0,sizeof(buffer));
+}
+
 /*
  * Read the content of the node from the page pid in the PageFile pf.
  * @param pid[IN] the PageId to read
@@ -47,13 +53,7 @@ RC BTLeafNode::write(PageId pid, PageFile& pf)
  */
 int BTLeafNode::getKeyCount()
 { 
-	int count = 0;
-	leafCursor* p = (leafCursor *)buffer;
-	while(p != 0 && count < MAX_LEAF_ENTRY_NUM){
-		p++;
-		count++;
-	}
-	return count; 
+	return num;
 }
 
 /*
@@ -70,7 +70,7 @@ RC BTLeafNode::insert(int key, const RecordId& rid)
 	locate(key,eid);
 	leafCursor *p = (leafCursor *)buffer;
 	p += eid+1;
-	size_t size = sizeof(leafCursor) * (getKeyCount() - eid+1);
+	size_t size = sizeof(leafCursor) * (getKeyCount() - eid -1);
 	char *temp = (char *)malloc(size);
 	memcpy(temp,p,size);
 	p->rid = rid;
@@ -78,6 +78,7 @@ RC BTLeafNode::insert(int key, const RecordId& rid)
 	p++;
 	memcpy(p,temp, size);
 	free(temp);
+	num++;
 	return 0;
 }
 
@@ -134,6 +135,7 @@ RC BTLeafNode::insertAndSplit(int key, const RecordId& rid,
 		setNextNodePtr(-1);
 		insert(key,rid);
 	}
+	num++;
 	return 0; 
 }
 
@@ -152,7 +154,7 @@ RC BTLeafNode::locate(int searchKey, int& eid)
 { 
 	eid = -1;
 	leafCursor *p = (leafCursor *)buffer;
-	while(p->key <= searchKey)
+	while(p->key <= searchKey && eid + 1 < num)
 	{
 		eid++;
 		if(p->key == searchKey)

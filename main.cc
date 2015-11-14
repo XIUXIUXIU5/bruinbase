@@ -11,7 +11,7 @@
 // #include "SqlEngine.h"
 #include "BTreeNode.h"
 #include <cstdio>
- #include <stdio.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -22,29 +22,34 @@ int main()
   // run the SQL engine taking user commands from standard input (console).
   // SqlEngine::run(stdin);
 	BTLeafNode n1;
-	memset(n1.buffer, 0, sizeof(n1.buffer));
-
-	leafCursor l1;
-	l1.key = 1;
-	l1.rid.pid = 2;
-	l1.rid.sid = 1;
-	leafCursor *p = (leafCursor *) n1.buffer;
-	*p = l1;
-	p++;
-	l1.key = 2;
-	l1.rid.pid = 2;
-	l1.rid.sid = 2;
-	*p = l1;
-	p++;
 	n1.setNextNodePtr(4);
 
-	dump_buffer(n1.buffer);
-	l1.key = 3;
-	l1.rid.pid = 4;
-	l1.rid.sid = 2;
+	leafCursor l1;
+	l1.rid.pid = 0;
+	l1.rid.sid = 0;
 
-	n1.insert(l1.key,l1.rid);
+	for (int i = 0; i < 47; i++)
+	{
+		l1.key = i+1;
+		n1.insert(l1.key,l1.rid);
+		dump_buffer(n1.buffer);
+	}
+	for (int i = 48; i < 86; i = i + 1)
+	{
+		l1.key = i+1;
+		n1.insert(l1.key,l1.rid);
+		dump_buffer(n1.buffer);
+	}
+
+	BTLeafNode n2;
+	int siblingKey;
+	n1.insertAndSplit( 48, l1.rid, n2,siblingKey);
+	printf("n1 is:\n");
 	dump_buffer(n1.buffer);
+	printf("n2 is:\n");
+	dump_buffer(n2.buffer);
+	printf("siblingKey is:\n");
+	printf("%d\n", siblingKey);
 
   return 0;
 }
