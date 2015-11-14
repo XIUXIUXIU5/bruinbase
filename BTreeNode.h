@@ -112,7 +112,7 @@ class BTLeafNode {
 
     PageId* siblingId();
 
-  //private:
+  private:
    /**
     * The main memory buffer for loading the content of the disk page 
     * that contains the node.
